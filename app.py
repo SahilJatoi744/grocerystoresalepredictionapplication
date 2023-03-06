@@ -22,7 +22,15 @@ from sklearn.metrics import precision_recall_curve,confusion_matrix,mean_squared
 
 
 
+st.header("Grocery Sale Prediction Application")
 
+from PIL import Image
+
+# Load your image
+image = Image.open("supermarket-4052658__340.jpg")
+
+# Display the image
+st.image(image, caption="Your Image Caption")
 
 df = pd.read_excel("items-2022-02-08-2023-02-09.xlsx", usecols=['Date', 'Time', 'Category','Item','Qty','PricePointName','SKU','GrossSales'])
 
