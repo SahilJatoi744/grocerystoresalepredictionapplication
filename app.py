@@ -24,7 +24,7 @@ from sklearn.metrics import precision_recall_curve,confusion_matrix,mean_squared
 
 
 
-df = pd.read_csv("items-2022-02-08-2023-02-09.csv", usecols=['Date', 'Time', 'Category','Item','Qty','PricePointName','SKU','GrossSales'])
+df = pd.read_excel("items-2022-02-08-2023-02-09.xlsx", usecols=['Date', 'Time', 'Category','Item','Qty','PricePointName','SKU','GrossSales'])
 
 # Sidebar for file upload and GitHub file selection
 st.sidebar.title("File Selection")
@@ -304,10 +304,6 @@ final_df = pd.DataFrame({
 
 # create a search field in the sidebar
 search_query = st.sidebar.text_input('Search', '')
-
-# filter the DataFrame based on the search query
-if search_query:
-    df = df[df['name'].str.contains(search_query)]
 
 
 st.write(final_df)
