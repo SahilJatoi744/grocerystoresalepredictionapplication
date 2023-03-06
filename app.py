@@ -310,8 +310,7 @@ final_df = pd.DataFrame({
     'Qty': predictions_df['Qty'],
 })
 
-# create a search field in the sidebar
-search_query = st.sidebar.text_input('Search', '')
+
 
 
 st.write(final_df)
