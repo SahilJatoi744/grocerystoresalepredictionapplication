@@ -5,26 +5,17 @@ from datetime import datetime, timedelta
 import csv
 # stream lit
 import streamlit as st
-import warnings
+from PIL import Image
 import datetime as dt
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-import sklearn
-## ML libraries
-from sklearn.model_selection import train_test_split,learning_curve, cross_val_predict,cross_validate,cross_val_score,KFold
-from sklearn.feature_selection import RFECV , RFE
-from sklearn.model_selection import train_test_split, GridSearchCV,RepeatedKFold,RepeatedStratifiedKFold
-from sklearn.metrics import f1_score, classification_report, accuracy_score, mean_squared_error, precision_score
-from sklearn.metrics.cluster import adjusted_rand_score,contingency_matrix
-from sklearn.ensemble import StackingRegressor,ExtraTreesRegressor
+from sklearn.ensemble import ExtraTreesRegressor
 #scores
-from sklearn.metrics import precision_recall_curve,confusion_matrix,mean_squared_error,mean_absolute_error,explained_variance_score,max_error,r2_score,median_absolute_error,mean_squared_log_error,silhouette_score
 
 
-
+st.sidebar.image('11697-removebg-preview.png', width=200)
 st.header("Grocery Sale Prediction Application")
 
-from PIL import Image
 
 # Load your image
 image = Image.open("supermarket-4052658__340.jpg")
@@ -34,26 +25,28 @@ st.image(image, caption="Your Image Caption")
 
 df = pd.read_excel("items-2022-02-08-2023-02-09.xlsx", usecols=['Date', 'Time', 'Category','Item','Qty','PricePointName','SKU','GrossSales'])
 
-# Sidebar for file upload and GitHub file selection
+
+
+
 st.sidebar.title("File Selection")
 uploaded_file = st.sidebar.file_uploader("Upload a file")
 
-
-
-
-
-
-# If file uploaded by user, read it into a data frame
 if uploaded_file is not None:
-    df1 = pd.read_csv(uploaded_file)
+    if uploaded_file.name.endswith('.csv'):
+        df1 = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
+    elif uploaded_file.name.endswith('.xlsx'):
+        df1 = pd.read_excel(uploaded_file)
+    elif uploaded_file.name.endswith('.json'):
+        df1 = pd.read_json(uploaded_file)
+    else:
+        # handle other file formats
+        pass
     
-   
+    merged_df = pd.concat([df1, df]) # create a list of dataframes to pass as the first argument to pd.concat()
+
+  
 
 
-# Merge the two data frames and display the result
-if uploaded_file is not None:
-    merged_df = pd.merge(df1, df)
-    
 
 
 
@@ -61,16 +54,6 @@ if uploaded_file is not None:
 
 # Change Datatype
 df['Date'] = pd.to_datetime(df['Date'])
-df['Time'] = pd.to_datetime(df['Time'])
-df['GrossSales'] = df['GrossSales'].replace({r'\$':''},regex=True)
-
-df['GrossSales'] = df['GrossSales'].replace({r'\)':''},regex=True)
-df['GrossSales'] = df['GrossSales'].replace({r'\(':''},regex=True)
-df['GrossSales'] = df['GrossSales'].replace({r'\,':''},regex=True)
-
-df['GrossSales'] = df['GrossSales'].replace({r'\,':''},regex=True)
-# conter oject to float
-df['GrossSales'] = df['GrossSales'].astype(float)
 
 # split date into month day and year column
 df['Month'] = df['Date'].dt.month
@@ -78,19 +61,11 @@ df['Day'] = df['Date'].dt.day
 df['Year'] = df['Date'].dt.year
 
 
-# split time into hours minutes and seconds column
-df['Time'] = df['Time'].dt.strftime('%H:%M:%S')
-df['Time'] = pd.to_datetime(df['Time'])
-df['Hours']=df['Time'].dt.strftime('%H')
-df['Minutes']=df['Time'].dt.strftime('%M')
-df['Seconds']=df['Time'].dt.strftime('%S')
-
 # After spliting drop Time column
-df.drop(['Time'],axis=1,inplace=True)
+df.drop(['Time',"SKU","GrossSales"],axis=1,inplace=True)
 
 # Drop Null Values
 df.dropna(inplace=True)
-
 
 # Manual label encoding of all category values
 df['Category'] = df['Category'].replace({'Coffee & Tea': 0,'Bakery & Dessert':1, 'Beverages Taxable':2,
@@ -141,49 +116,39 @@ dict = {'Coffee & Tea': 0,'Bakery & Dessert':1, 'Beverages Taxable':2,
 pd.DataFrame.from_dict(dict, orient='index').to_csv('updated_Category.csv')
 
 # Model Implementation</h1>
-df.drop(["Hours","Minutes","SKU","Seconds"], axis=1, inplace=True)
 df["Category"]=pd.to_numeric(df["Category"], errors='coerce')
 df["Item"]=pd.to_numeric(df["Item"], errors='coerce')
 
-#Drop Null values
-df.dropna(inplace=True)
+
 
 # Drop Time And Implement Model
-agg_df = df.groupby(['Date', 'Category', 'Item','PricePointName']).agg({'Qty': 'sum', 'GrossSales': 'sum'}).reset_index()
+df = df.groupby(['Date', 'Category', 'Item','PricePointName']).agg({'Qty': 'sum'}).reset_index()
 
 # Sort the data by date, category, and item
-agg_df = agg_df.sort_values(['Date', 'Category', 'Item','PricePointName'])
+df = df.sort_values(['Date', 'Category', 'Item','PricePointName'])
 
 # Set the date column as the index
 
 
 # Check the resulting dataframe
 
-# copy data Frame
-df1 = agg_df.copy()
+
 
 # split date into month day and year column
-df1['Month'] = agg_df['Date'].dt.month
-df1['Day'] = agg_df['Date'].dt.day
-df1['Year'] = agg_df['Date'].dt.year
+df['Month'] = df['Date'].dt.month
+df['Day'] = df['Date'].dt.day
+df['Year'] = df['Date'].dt.year
 
-df1.drop(['Date'],axis=1,inplace=True)
-df1.drop(['GrossSales'],axis=1,inplace=True)
-X = df1.drop('Qty', axis=1)
-y = df1['Qty']
+df.drop(['Date'],axis=1,inplace=True)
 
-#Creating Parameters
-params = {
-    'max_features':["sqrt", "log2", None],
-    'criterion':["squared_error", "absolute_error"],
-    'random_state':[1,42,33]}
+X = df.drop('Qty', axis=1)
+y = df['Qty']
+
+
 # Split Train Test 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, shuffle =True)
 model_ex= ExtraTreesRegressor(criterion= 'squared_error', max_features= None, random_state=1).fit( X_train, y_train)
 y_prediction_ex = model_ex.predict(X_test)
-
-# Model Score
-score=model_ex.score(X,y)
 
 
 
@@ -201,9 +166,9 @@ predictions_df = pd.DataFrame(columns=['Day', 'Month', 'Year', 'Category', 'Item
 
 # Loop through the dates and make predictions for each item and price point
 for date in date_list:
-    for category in df1['Category'].unique():
-        for item in df1[df1['Category'] == category]['Item'].unique():
-            for price_point in df1[(df1['Category'] == category) & (df1['Item'] == item)]['PricePointName'].unique():
+    for category in df['Category'].unique():
+        for item in df[df['Category'] == category]['Item'].unique():
+            for price_point in df[(df['Category'] == category) & (df['Item'] == item)]['PricePointName'].unique():
                 
                 # Create a row of data to pass to the model
                 row = {
@@ -311,6 +276,7 @@ final_df = pd.DataFrame({
 })
 
 
+st.header("Prediction Result")
 
 
 st.write(final_df)
@@ -318,7 +284,7 @@ st.write(final_df)
 # add a button to save the DataFrame to a file
 if st.button('Download DataFrame'):
     # convert the DataFrame to a CSV string
-    csv = df.to_csv(index=False)
+    csv = final_df.to_csv(index=False)
     # use the file_downloader function to download the CSV string as a file
     st.download_button(
         label="Download CSV",
@@ -326,3 +292,15 @@ if st.button('Download DataFrame'):
         file_name='my_dataframe.csv',
         mime='text/csv'
     )
+
+# create a search field
+search_term = st.text_input('Search for an item')
+
+    # filter the data based on the search term
+if search_term:
+    filtered_df = final_df[final_df['Item'].str.contains(search_term, case=False)]
+else:
+    filtered_df = final_df
+
+    # display the filtered data
+st.write(filtered_df)
