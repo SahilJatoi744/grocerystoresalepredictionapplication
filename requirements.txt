@@ -1,11 +1,8 @@
-matplotlib
 numpy
 pandas
 scikit_learn
-seaborn
 streamlit
-openpyxl
 math
-csv
 DateTime
 PIL
+csv
