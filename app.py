@@ -14,7 +14,7 @@ from sklearn.ensemble import ExtraTreesRegressor
 
 
 st.sidebar.image('11697-removebg-preview.png', width=200)
-st.header("Grocery Sale Prediction Application")
+st.title("Grocery Sale Prediction Application")
 
 
 # Load your image
@@ -292,7 +292,7 @@ if st.button('Download DataFrame'):
         file_name='my_dataframe.csv',
         mime='text/csv'
     )
-
+st.header("Search For an Item")
 # create a search field
 search_term = st.text_input('Search for an item')
 
