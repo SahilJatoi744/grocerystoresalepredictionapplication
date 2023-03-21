@@ -42,7 +42,7 @@ if uploaded_file is not None:
         # handle other file formats
         pass
     
-    merged_df = pd.concat([df1, df]) # create a list of dataframes to pass as the first argument to pd.concat()
+    df = pd.concat([df1, df]) # create a list of dataframes to pass as the first argument to pd.concat()
 
   
 
